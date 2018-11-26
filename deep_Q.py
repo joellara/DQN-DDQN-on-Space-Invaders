@@ -53,11 +53,12 @@ class DeepQ(object):
         self.target_model.add(Activation('relu'))
         self.target_model.add(Flatten())
         self.target_model.add(Dense(512))
-        self.model.add(Activation('relu'))
+        self.target_model.add(Activation('relu'))
         self.target_model.add(Dense(NUM_ACTIONS))
         self.target_model.compile(loss='mse', optimizer=Adam(lr=0.00001))
         self.target_model.set_weights(self.model.get_weights())
-
+        print(self.model.summary())
+        print(self.target_model.summary())
         print("Successfully constructed networks.")
 
     def predict_movement(self, data, epsilon):
@@ -85,7 +86,7 @@ class DeepQ(object):
         loss = self.model.train_on_batch(s_batch, targets)
 
         # Print the loss every 10 iterations.
-        if observation_num % 10 == 0:
+        if observation_num % 1000 == 0:
             print("We had a loss equal to ", loss)
 
     def save_network(self, path):
@@ -101,7 +102,7 @@ class DeepQ(object):
         model_weights = self.model.get_weights()
         target_model_weights = self.target_model.get_weights()
         for i in range(len(model_weights)):
-            target_model_weights[i] = TAU * model_weights[i] + (1 - TAU) * target_model_weights[i]
+            target_model_weights[i] = TAU * model_weights[i] + ((1 - TAU) * target_model_weights[i])
         self.target_model.set_weights(target_model_weights)
 
 if __name__ == "__main__":

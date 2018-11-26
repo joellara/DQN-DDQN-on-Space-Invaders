@@ -4,6 +4,7 @@ from replay_buffer import ReplayBuffer
 import numpy as np
 from duel_Q import DuelQ
 from deep_Q import DeepQ
+from gym import wrappers
 
 # List of hyper-parameters and constants
 BUFFER_SIZE = 100000
@@ -24,11 +25,12 @@ class SpaceInvader(object):
         self.replay_buffer = ReplayBuffer(BUFFER_SIZE)
 
         # Construct appropriate network based on flags
-        if mode == "DDQN":
+        if mode == "DQN":
             self.deep_q = DeepQ()
-        elif mode == "DQN":
+        elif mode == "DDQN":
             self.deep_q = DuelQ()
 
+        self.mode = mode
         # A buffer that keeps the last 3 images
         self.process_buffer = []
         # Initialize buffer with the first frame
@@ -74,7 +76,7 @@ class SpaceInvader(object):
                 self.process_buffer.append(temp_observation)
                 done = done | temp_done
 
-            if observation_num % 10 == 0:
+            if observation_num % 1000 == 0:
                 print("We predicted a q value of ", predict_q_value)
 
             if done:
@@ -96,7 +98,7 @@ class SpaceInvader(object):
             # Save the network every 100000 iterations
             if observation_num % 10000 == 9999:
                 print("Saving Network")
-                self.deep_q.save_network("saved.h5")
+                self.deep_q.save_network("dqn_saved.h5" if self.mode == "DQN" else "duel_saved.h5")
 
             alive_frame += 1
             observation_num += 1
@@ -106,7 +108,7 @@ class SpaceInvader(object):
         done = False
         tot_award = 0
         if save:
-            self.env.monitor.start(path, force=True)
+            self.env = wrappers.Monitor(env, path,force=True)
         self.env.reset()
         self.env.render()
         while not done:
@@ -118,7 +120,7 @@ class SpaceInvader(object):
             self.process_buffer.append(observation)
             self.process_buffer = self.process_buffer[1:]
         if save:
-            self.env.monitor.close()
+            self.env.close()
 
     def calculate_mean(self, num_samples = 100):
         reward_list = []
